@@ -1,0 +1,77 @@
+2. Methods
+
+Participants and Sampling. Data were derived from annual mental health screening at Sichuan Preschool Education College, China, across six academic cohorts (2019–2025). The institutional screening program, established in 2015 under approval from the Student Affairs Office, administers the SCL-90-R to all enrolled students as part of comprehensive wellbeing monitoring in accordance with Chinese Ministry of Education guidelines. Initial sample: N = 50,000 students aged 17–26 years. No exclusion criteria based on mental health history or treatment status were applied, as the objective was capturing the full distress spectrum in a non-clinical university population. All procedures adhered to strict data de-identification protocols and received ethical approval from the institutional review board (reference: [REDACTED]). The study conforms to the Declaration of Helsinki and Chinese ethical guidelines for educational research.
+
+Temporal distribution: 2019–2020 (n = 8,234), 2020–2021 (n = 7,891), 2021–2022 (n = 8,343), 2022–2023 (n = 7,611), 2023–2024 (n = 7,890), 2024–2025 (n = 7,891). Final analytic sample: N = 47,860 (62.3% female; M_age = 19.7, SD = 1.4) following data quality filtering. Prospective power analysis using netSimulator (Epskamp, 2022) confirmed that N ≥ 3,000 provides >90% power for stable network estimation (k = 35 nodes, sparsity = 0.50, target edge detection |r| ≥ 0.10, sensitivity = 0.85, specificity = 0.80), ensuring robust parameter estimation and adequate precision for temporal invariance testing.
+
+Instrument and Item Selection. The Chinese-validated SCL-90-R (Wang, 1984) comprises 90 items rated on 5-point Likert scales (0 = not at all to 4 = extremely) assessing distress severity across nine subscales. We retained 35 items from theoretically coherent internalizing subscales: Somatization (12 items: headaches, faintness, chest pain, back pain, nausea, muscle soreness, temperature dysregulation, numbness, throat lump, body weakness, heavy limbs, death thoughts), Depression (13 items: sexual disinterest, low energy, suicidal ideation, crying, feeling trapped, self-blame, loneliness, blue mood, excessive worry, anhedonia, hopelessness, death preoccupation, worthlessness), and Anxiety (10 items: nervousness, trembling, sudden fear, fearfulness, palpitations, tension, panic, restlessness, dread, frightening cognitions). This focused network ensured theoretical coherence (all items reflect internalizing psychopathology), interpretability (35-node networks remain visualizable versus 90-node hairballs), hypothesis specificity (tests Somatic-Affective fusion within internalizing spectrum), and statistical efficiency (595 possible edges versus 4,005). Sensitivity analyses using the full 90-item SCL-90-R confirmed substantive conclusions were unchanged (Supplement S3).
+
+Data Quality Assurance. We implemented a three-stage sequential filtering protocol to identify and exclude careless responding, which introduces systematic measurement error distorting network structure (Curran, 2016; Meade & Craig, 2012).
+
+Stage 1—Longstring Analysis: Calculated maximum consecutive identical responses per participant. Exclusion criterion: longstring ≥15 (indicating non-engagement). Excluded: n = 1,247 (2.5%).
+
+Stage 2—Multivariate Outlier Detection: Calculated Mahalanobis distance (D²) quantifying response pattern deviation from sample centroid in 35-dimensional symptom space. D² follows χ² distribution under normality, enabling statistical testing (Leys et al., 2018). Exclusion criterion: D² exceeding critical χ² value (df = 35, α = .001). Excluded: n = 893 (1.8%).
+
+Stage 3—Goldbricker Redundancy Check: Applied goldbricker (Jones, 2023) to identify item pairs with r > .90, indicating failed discrimination. Result: Zero pairs exceeded threshold; no exclusions. Final sample: N = 47,860 (95.7% retention). Sensitivity analysis re-estimating networks with excluded cases confirmed unchanged community structure, bridge node identities, and knockout effects (Supplement S1).
+
+Network Estimation. We estimated Gaussian Graphical Models (GGM) via the bootnet package (Epskamp et al., 2018) in R 4.3.1. GGMs map conditional independence structures: each edge represents the partial correlation between nodes after controlling for all other nodes, isolating direct associations from spurious relationships mediated by third variables. Given multivariate normal distribution \mathbf{X}\sim N(\mathbit{\mu},\mathbf{\Sigma}), the precision matrix \mathbf{\Theta}=\mathbf{\Sigma}^{-1}contains conditional dependencies: 
+\rho_{ij\mid\mathrm{rest}}=-\frac{\theta_{ij}}{\sqrt{\theta_{ii}\theta_{jj}}}
+
+where \rho_{ij\mid\mathrm{rest}}is the partial correlation between nodes iand jcontrolling for all others, and \theta_{ij}are precision matrix elements. 
+Regularization employed Extended Bayesian Information Criterion graphical LASSO (EBICglasso; Foygel & Drton, 2010), adding L1 penalty \lambdato shrink weak partial correlations to zero. EBIC selects optimal \lambdaby minimizing: 
+
+\mathrm{EBIC}=-2\mathcal{L}(\mathbf{\Theta})+E\log\funcapply(n)+4E\gamma\log\funcapply(p)
+
+where \mathcal{L}is log-likelihood, Eis non-zero edges, nis sample size, pis nodes, and \gammais the tuning parameter. We set \gamma=0.5(recommended default; Epskamp & Fried, 2018), balancing sensitivity (detecting true edges) and specificity (avoiding false positives) to produce moderately sparse networks appropriate for psychological data. The estimated network contained 342 non-zero edges (density = 0.58; mean absolute edge weight = 0.09, SD = 0.07). Robustness checks using \gamma= 0.25 and 0.75, cross-validation LASSO, and polychoric correlations confirmed stable findings (Supplement S2). 
+
+Community Detection. To test H1 (Structural Fusion), we applied Walktrap (Pons & Latapy, 2006) and Louvain (Blondel et al., 2008) algorithms via igraph. Walktrap identifies communities through random walks (length = 4 steps); nodes in the same community are reached by similar walk paths. Louvain directly optimizes modularity:
+
+Q=\frac{1}{2m}\sum_{ij}\left[A_{ij}-\frac{k_ik_j}{2m}\right]\delta(c_i,c_j)
+
+where A_{ij}is adjacency matrix, k_iis node degree, mis total edges, and \delta(c_i,c_j)=1if nodes share community. Q > 0.30 indicates strong structure (Newman, 2006). We required both algorithms to converge on identical assignments for robustness. Adjusted Rand Index (ARI) quantified correspondence between empirical communities and theoretical models (SCL-90-R subscales; hypothesized Somatic-Affective structure). Interpretation: ARI < 0.50 = weak correspondence, ARI > 0.70 = strong correspondence (Hubert & Arabie, 1985). 
+
+Bridge Centrality Analysis. To test H2 (Bridge Asymmetry), we calculated bridge expected influence (BEI; Bringmann et al., 2019; Jones et al., 2021) using networktools. For node iin community A: 
+
+{\mathrm{BEI}}_i=\sum_{j\in B,C,\ldots}\mid w_{ij}\mid
+
+
+summing absolute edge weights to nodes in other communities. We defined communities a priori based on SCL-90-R subscales (Somatic: 12 items; Affective: Depression + Anxiety, 23 items) to avoid circularity—using empirical communities would eliminate cross-domain bridges by definition. Bootstrapped 95% CIs (5,000 iterations) identified significantly high-bridge nodes (non-overlapping with median BEI). Independent-samples t-test compared mean somatic versus affective BEI; Cohen's d quantified effect size. Sensitivity analyses using bridge strength, betweenness, and alternative community definitions confirmed convergent findings (Supplement S4).
+
+In Silico Node Knockout Simulations. To test H3 (Mechanistic Essentiality), we conducted computational knockout experiments distinguishing statistical centrality from causal necessity. Procedure:
+
+Step 1: Estimate baseline GGM (k = 35 nodes) via EBICglasso. Calculate baseline global connectivity:
+
+S_{\mathrm{baseline}}=\sum_{i<j}\mid w_{ij}\mid
+
+
+Step 2: Select target node for removal (e.g., Q56: body weakness).
+
+Step 3: Remove target node column from data matrix, retaining k-1 nodes (simulating successful intervention).
+
+Step 4: Re-estimate GGM on remaining nodes using identical parameters. Calculate knockout connectivity:
+
+S_{\mathrm{knockout}}=\sum_{i<j}\mid w_{ij}^\prime\mid
+
+Re-estimation allows network reorganization—edges among remaining nodes may strengthen or weaken as the system adapts, capturing compensatory dynamics.
+
+Step 5: Quantify proportional destabilization:
+
+\Delta Connectivity=\frac{S_{\mathrm{baseline}}-S_{\mathrm{knockout}}}{S_{\mathrm{baseline}}}\times100%
+
+
+Larger \Deltavalues indicate greater mechanistic essentiality. Critical comparison: We matched 6 highest-BEI somatic nodes to 6 affective nodes on expected influence (±0.10) to isolate mechanistic contribution beyond baseline centrality. If somatic knockout produces larger \Deltadespite matched centrality, this demonstrates mechanistic privilege. Paired permutation test (5,000 iterations) tested mean difference; Cohen's d quantified effect size. Null distribution from 1,000 random 6-node samples provided baseline expectations. Sensitivity analyses using alternative connectivity metrics (density, mean edge weight, largest component) confirmed convergent results (Supplement S5). 
+
+Temporal Invariance Testing. To test H5 (Temporal Invariance), we divided the sample into three pandemic-aligned periods: Pre-pandemic (2019–2020; n = 17,125), Acute pandemic (2021–2022; n = 15,234), and Post-acute (2023–2024; n = 15,501). Network Comparison Test (NCT; van Borkulo et al., 2022) via NetworkComparisonTest package evaluated invariance at three levels using permutation testing (2,500 iterations):
+
+Test 1—Network Structure: Null hypothesis: edge matrices are identical. Test statistic: maximum edge difference. p > .05 supports invariance.
+Test 2—Global Strength: Null hypothesis: overall connectivity (sum of absolute edge weights) is equal. Expected to differ (pandemic elevated distress) without altering structure.
+Test 3—Edge-Specific: Tests each of 595 edges individually with Benjamini-Hochberg FDR correction (α = .05). Identifies which specific relationships changed.
+Community detection performed separately per period; ARI quantified cross-period replication. Threshold: ARI > 0.80 indicates strong stability (Hubert & Arabie, 1985).
+
+Sentinel Short-Form Development. To test H4 (Information-Theoretic Compression), we developed a 6-item bridge-based screening tool via 4-step procedure:
+
+Step 1—Node Selection: Identified 6 highest-BEI somatic nodes (Q56, Q53, Q52, Q58, Q54, Q51).
+Step 2—Sample Splitting: Randomly divided sample into Derivation (60%; n = 28,716) and Validation (40%; n = 19,144) subsets to prevent overfitting.
+Step 3—Criterion Validation: Calculated R² between Sentinel sum scores and full 35-item internalizing scale. ROC analysis tested clinical discrimination (T-score ≥63). Subsample with 6-month follow-up (n = 3,247) enabled predictive validity testing (service utilization, academic persistence).
+Step 4—Efficiency Comparison: Compared Sentinel to four alternatives in validation sample: (1) random 6-item somatic sample (1,000 permutations), (2) 6 highest centrality (non-bridge) somatic nodes, (3) balanced 2 soma + 2 depression + 2 anxiety, (4) 6 highest-EI affective symptoms. Bootstrapped difference tests (5,000 iterations) evaluated ΔR² with Bonferroni correction. Success criterion: R² ≥ 0.80 and outperformance by ΔR² ≥ 0.10 (p < .01).
+All analyses conducted in R 4.3.1 using bootnet 1.5, qgraph 1.9.5, igraph 1.5.0, NetworkComparisonTest 2.2.2, and networktools 1.5.0. De-identified data and complete analysis scripts available at [REPOSITORY]. Hypotheses pre-registered on Open Science Framework ([OSF LINK])
